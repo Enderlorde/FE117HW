@@ -49,7 +49,7 @@ class TodoModel extends EventEmitter{
 
 class TaskModel extends EventEmitter{
     #fields = {};
-    state = false;
+    status = false;
 
     constructor(fields){
         super();
@@ -65,13 +65,13 @@ class TaskModel extends EventEmitter{
         this.emit('taskEdited',this.#fields);
     }
 
-    setComplete(){
-        this.state = true;
-        this.emit('taskCompleted',this);
+    changeStatus(){
+        this.status = !this.status;
+        this.emit('taskStatusChanged',this);
     }
 
     isComplete(){
-        return this.state;
+        return this.status;
     }
 
     getDate(){
@@ -116,7 +116,10 @@ class TodoView extends EventEmitter{
         let listElement = document.createElement('ul');
         listElement.className = 'todo__tasks';
         this.#model.getList().forEach(task => {
-            listElement.appendChild(new TaskController(task, new TaskView(task)).get());
+            task.on('taskStatusChanged', () => this.updateList());
+            let taskView = new TaskView(task);
+            let taskController = new TaskController(task, taskView);
+            return listElement.appendChild(taskView.get());
         });
         this.#view.replaceChild(listElement, this.#view.querySelector('.todo__tasks'));
         this.display()
@@ -142,17 +145,21 @@ class TaskView extends EventEmitter{
         this.#model = model;
 
         this.#template = document.createElement('li');
-        this.#template.className = 'tasks__task tasks__task_deactivated';
+        this.#template.className = `tasks__task tasks__task_${model.isComplete()?'deactive':'active'}`;
 
         let checkbox = document.createElement('input');
         checkbox.setAttribute('type','checkbox');
-        checkbox.addEventListener('change',this.emit('flagChanged'));
+        checkbox.addEventListener('change', () => this.emit('flagChanged',this));
         checkbox.checked = this.#model.isComplete();
         this.#template.appendChild(checkbox);
         
         let text = document.createElement('p');
         text.innerText = this.#model.getText();
         this.#template.appendChild(text);
+    }
+
+    render(){
+
     }
 
     get(){
@@ -189,17 +196,10 @@ class TodoController extends EventEmitter{
 }
 
 class TaskController extends EventEmitter{
-    #model;
-    #view;
     constructor(model,view){
         super();
-        this.#model = model;
-        this.#view = view;
-        this.#view.on('flagSwitched',(arg) => console.log(arg));
-    }
 
-    get(){
-        this.#view.get();
+        view.on('flagChanged',() => model.changeStatus());
     }
 }
 
