@@ -3,6 +3,106 @@
     padding: 0;
 }
 
-.tasks__task_inactive p{
+body{
+    background-color: #f0efe9;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.todo{
+    position: relative;
+    padding: 40px 40px 50px 40px;
+    background-color: #fff;
+    box-shadow: 0 5px 5px gray;
+    color: #5b5e6e;
+}
+
+.header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 40px;
+}
+
+.header__day{
+    text-transform: uppercase;
+}
+
+.date{
+    display: flex;
+    align-items: center;
+}
+
+.date__item{
+    font-size: 12px;
+}
+
+.date__item_day{
+    font-size: 32px;
+}
+
+.todo__btn{
+    position: absolute;
+    bottom: -42px;
+    left: calc(50% - 42px);
+}
+
+.btn{
+    background-color: #50e3a4;
+    border: 0;
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 5px 5px #236347;
+}
+
+.btn img{
+    width: 64px;
+    height: 64px;
+}
+
+.btn_size_small img{
+    width: 16px;
+    height: 16px;
+}
+
+.btn_bg_clear{
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.todo__input{
+    width: 100%;
+    color: #5b5e6e;
+    padding: 5px;
+    border: 0;
+    border-bottom: 1px solid #5b5e6e;
+    outline: #5b5e6e;
+}
+
+.tasks{
+    padding-top: 40px;
+    list-style: none;
+}
+
+.tasks__task{
+    padding: 5px 0 5px 0;
+}
+
+.task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task p{
+    padding: 0 10px 0 10px;
+}
+
+.task_inactive p{
+    color: #d3d5dc;
     text-decoration: line-through;
 }
