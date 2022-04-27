@@ -27,7 +27,7 @@ class TodoModel extends EventEmitter{
     addTask(task){
         if(task instanceof TaskModel){
             this.#list.push(task);
-            this.emit('taskAdded', task);
+            this.emit('taskAdded', task);          
         }else{
             return new Error ('Provide instance of class Task');
         }
@@ -36,7 +36,7 @@ class TodoModel extends EventEmitter{
     removeTask(index){
         if (index > 0 && index<this.#list.length){
             this.#list.splice(index,1);
-            this.emit('taskRemoved',index);
+            this.emit('taskRemoved', index);
         }else{
             return new Error(`Index ${index.toString()} not exist`);
         } 
@@ -49,7 +49,8 @@ class TodoModel extends EventEmitter{
 
 class TaskModel extends EventEmitter{
     #fields = {};
-    status = false;
+    #status = false;
+
 
     constructor(fields){
         super();
@@ -66,12 +67,12 @@ class TaskModel extends EventEmitter{
     }
 
     changeStatus(){
-        this.status = !this.status;
-        this.emit('taskStatusChanged',this);
+        this.#status = !this.#status;
+        this.emit('taskStatusChanged');
     }
 
     isComplete(){
-        return this.status;
+        return this.#status;
     }
 
     getDate(){
@@ -116,7 +117,7 @@ class TodoView extends EventEmitter{
         let listElement = document.createElement('ul');
         listElement.className = 'todo__tasks';
         this.#model.getList().forEach(task => {
-            task.on('taskStatusChanged', () => this.updateList());
+            
             let taskView = new TaskView(task);
             let taskController = new TaskController(task, taskView);
             return listElement.appendChild(taskView.get());
@@ -137,24 +138,21 @@ class TodoView extends EventEmitter{
 }
 
 class TaskView extends EventEmitter{
-    #model;
     #template;
     constructor(model){
         super();
 
-        this.#model = model;
-
         this.#template = document.createElement('li');
-        this.#template.className = `tasks__task tasks__task_${model.isComplete()?'deactive':'active'}`;
+        this.#template.className = `tasks__task tasks__task_${model.isComplete()?'inactive':'active'}`;
 
         let checkbox = document.createElement('input');
         checkbox.setAttribute('type','checkbox');
         checkbox.addEventListener('change', () => this.emit('flagChanged',this));
-        checkbox.checked = this.#model.isComplete();
+        checkbox.checked = model.isComplete();
         this.#template.appendChild(checkbox);
         
         let text = document.createElement('p');
-        text.innerText = this.#model.getText();
+        text.innerText = model.getText();
         this.#template.appendChild(text);
     }
 
@@ -167,32 +165,12 @@ class TaskView extends EventEmitter{
     }
 }
 
-class TaskEditorView extends EventEmitter{
-    #task
-    constructor(task){
-        super();
-        this.#task = task;
-    }
-
-    display(){
-        
-    }
-
-    hide(){
-        
-    }
-}
-
 class TodoController extends EventEmitter{
-    #model;
     constructor(model,view){
         super();
-        this.#model = model;
+
         view.on('inputChanged',(arg) => model.addTask(new TaskModel({text:arg, date:Date.now()})));
-
     }
-
-
 }
 
 class TaskController extends EventEmitter{
