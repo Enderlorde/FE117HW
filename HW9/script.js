@@ -70,12 +70,13 @@ class TaskModel extends EventEmitter{
 
     edit(data){
         this.#fields = {...this.#fields, ...data};
-        this.emit('taskEdited',this.#fields);
+        this.emit('taskChanged',this.#fields);
+        console.log(`TaskModel.edit: ${this} text changed`);
     }
 
     changeStatus(){
         this.#status = !this.#status;
-        this.emit('taskStatusChanged',this);
+        this.emit('taskChanged',this);
         console.log(`TaskModel.changeStatus: ${this} status changed`);
     }
 
@@ -110,15 +111,37 @@ class TodoView extends EventEmitter{
     }
 
     render(){
+        let today = new Date(Date.now());
         let tasks = this.#todoModel.getList();
         let appElement = document.createElement('div');
         appElement.className = 'todo';
 
-        let titleElement = document.createElement('h2');
-        titleElement.innerText = 'Todo list';
+        let headerElement = document.createElement('div');
+        headerElement.className = 'todo__header header';
+        headerElement.innerHTML = `
+            <div class='header__date date'>
+                <div class='date__item date__item_day'>
+                    ${today.getDay()}
+                </div>
+                <div class='date__item date__item_vertical'>
+                    <div>
+                        ${new Intl.DateTimeFormat('en-US', { month: 'short'}).format(today)}
+                    </div>
+                    <div>
+                        ${today.getFullYear()}
+                    </div>
+                </div>
+            </div>
+
+            <div class='header__day'>
+                ${new Intl.DateTimeFormat('en-US', { weekday: 'long'}).format(today)}
+            </div>
+        `
 
         let inputElement = document.createElement('input');
         inputElement.type = 'text';
+        inputElement.className = 'todo__input';
+        inputElement.placeholder = 'Type new task here';
         inputElement.addEventListener('change',e => {
             let newTask = new TaskModel({text:e.target.value, date: Date.now()}, tasks.length);
             this.#todoModel.addTask(newTask);
@@ -126,7 +149,10 @@ class TodoView extends EventEmitter{
         });
 
         let clearButton = document.createElement('button');
-        clearButton.innerText = 'Clear';
+        clearButton.className = 'todo__btn btn'
+        clearButton.innerHTML = `
+            <img src='img/trash.svg' alt='delete all'>
+        `;
         clearButton.addEventListener('click',e => {
             this.#todoModel.flushTasks();
             this.render();
@@ -138,11 +164,11 @@ class TodoView extends EventEmitter{
 
         tasks.forEach(taskModel => {
             let taskView = new TaskView(taskModel);
-            taskView.on('taskStatusChanged', () => this.render())
+            taskView.on('taskChanged', () => this.render())
             taskView.render(listElement);
         })
 
-        appElement.appendChild(titleElement);
+        appElement.appendChild(headerElement);
         appElement.appendChild(inputElement);
         appElement.appendChild(clearButton);
         appElement.appendChild(listElement);
@@ -165,25 +191,39 @@ class TaskView extends EventEmitter{
         this.#taskModel = taskModel;
     }
 
+    taskEditorShow(text){
+        let editedText = prompt(`Edit task "${text}"`);
+        this.#taskModel.edit({text: editedText, date: Date.now()});
+        this.emit('taskChanged');
+    }
+
     render(parent){
         let listItemElement = document.createElement('li');
-        listItemElement.id = `task_${this.#id}`;
-        listItemElement.className = `tasks__task tasks__task_${this.#status?'inactive':'active'}`;
+        listItemElement.className = `tasks__task task task_${this.#status?'inactive':'active'}`;
 
         let listItemCheckbox = document.createElement('input');
         listItemCheckbox.type = 'checkbox';
         listItemCheckbox.checked = this.#status;
         listItemCheckbox.addEventListener('change', () => {
             this.#taskModel.changeStatus();
-            this.emit('taskStatusChanged');
+            this.emit('taskChanged');
             this.render(parent);
         });
 
         let listItemText = document.createElement('p');
         listItemText.innerText = this.#text;
 
+        let editButton = document.createElement('button');
+        editButton.className = 'task__btn btn btn_size_small btn_bg_clear'
+        editButton.innerHTML = `
+            <img src='img/pencil.svg'>
+        `;
+
+        editButton.addEventListener('click', () => this.taskEditorShow(this.#taskModel.getText()));
+
         listItemElement.appendChild(listItemCheckbox);
         listItemElement.appendChild(listItemText);
+        listItemElement.appendChild(editButton);
 
         parent.appendChild(listItemElement);
     }
@@ -209,7 +249,13 @@ class TaskController extends EventEmitter{
 }
 
 
-let todoModel = new TodoModel([]);
+let task1 = new TaskModel({text: 'Buy iphone', date: Date.now()});
+let task2 = new TaskModel({text: 'Buy ipad', date: Date.now()});
+let task3 = new TaskModel({text: 'Buy apple pipin', date: Date.now()});
+
+task2.changeStatus();
+
+let todoModel = new TodoModel([task1,task2,task3]);
 
 let todoView = new TodoView(todoModel);
 let todoController = new TodoController(todoModel, todoView);
