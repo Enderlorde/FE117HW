@@ -1,0 +1,8 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+.tasks__task_inactive p{
+    text-decoration: line-through;
+}

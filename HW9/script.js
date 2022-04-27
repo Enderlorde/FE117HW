@@ -27,7 +27,8 @@ class TodoModel extends EventEmitter{
     addTask(task){
         if(task instanceof TaskModel){
             this.#list.push(task);
-            this.emit('taskAdded', task);
+            this.emit('taskListUpdated', task);
+            console.log('todo.addTask: ' + task + ' added');
         }else{
             return new Error ('Provide instance of class Task');
         }
@@ -36,10 +37,15 @@ class TodoModel extends EventEmitter{
     removeTask(index){
         if (index > 0 && index<this.#list.length){
             this.#list.splice(index,1);
-            this.emit('taskRemoved',index);
+            this.emit('taskListUpdated',index);
         }else{
             return new Error(`Index ${index.toString()} not exist`);
         } 
+    }
+
+    flushTasks(){
+        this.#list = [];
+        this.emit('taskListUpdated');
     }
 
     getList(){
@@ -49,12 +55,14 @@ class TodoModel extends EventEmitter{
 
 class TaskModel extends EventEmitter{
     #fields = {};
-    status = false;
+    #status = false;
+    #id = 0;
 
-    constructor(fields){
+    constructor(fields, id=0){
         super();
         if (typeof fields == 'object' && Object.keys(fields).includes('text') && Object.keys(fields).includes('date')){
             this.#fields = fields;
+            this.#id = id;
         }else{
             return new Error ('You must provide object with "text" and "date" fields');
         }
@@ -66,12 +74,13 @@ class TaskModel extends EventEmitter{
     }
 
     changeStatus(){
-        this.status = !this.status;
+        this.#status = !this.#status;
         this.emit('taskStatusChanged',this);
+        console.log(`TaskModel.changeStatus: ${this} status changed`);
     }
 
     isComplete(){
-        return this.status;
+        return this.#status;
     }
 
     getDate(){
@@ -85,101 +94,98 @@ class TaskModel extends EventEmitter{
     getFields(){
         return this.#fields;
     }
+
+    getId(){
+        return this.#id;
+    }
 }
 
 class TodoView extends EventEmitter{
-    #model;
-    #view;
-    constructor(model){
+    #todoModel = {};
+    constructor(todoModel){
         super();
-        this.#model = model;
-
-        this.#view = document.createElement('div');
-        this.#view.className = "todo";
-        this.#view.innerHTML = `
-            <h2>ToDo List</h2>
-            <ul class='todo__tasks'>
-            </ul>
-        `;
-
-        let input = document.createElement('input');
-        input.setAttribute('type','text');
-        input.addEventListener('change',evnt => this.emit('inputChanged', evnt.target.value));
-        this.#view.querySelector('h2').appendChild(input);
-
-      
-        model.on('taskAdded',() => this.updateList());
-
+        
+        this.#todoModel = todoModel;
+        todoModel.on('taskListUpdated', () => this.render());
     }
 
-    updateList(){
-        let listElement = document.createElement('ul');
-        listElement.className = 'todo__tasks';
-        this.#model.getList().forEach(task => {
-            task.on('taskStatusChanged', () => this.updateList());
-            let taskView = new TaskView(task);
-            let taskController = new TaskController(task, taskView);
-            return listElement.appendChild(taskView.get());
+    render(){
+        let tasks = this.#todoModel.getList();
+        let appElement = document.createElement('div');
+        appElement.className = 'todo';
+
+        let titleElement = document.createElement('h2');
+        titleElement.innerText = 'Todo list';
+
+        let inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        inputElement.addEventListener('change',e => {
+            let newTask = new TaskModel({text:e.target.value, date: Date.now()}, tasks.length);
+            this.#todoModel.addTask(newTask);
+            this.render();
         });
-        this.#view.replaceChild(listElement, this.#view.querySelector('.todo__tasks'));
-        this.display()
-    }
 
-    display(){        
-        document.querySelector('body').appendChild(this.#view);
-    }
+        let clearButton = document.createElement('button');
+        clearButton.innerText = 'Clear';
+        clearButton.addEventListener('click',e => {
+            this.#todoModel.flushTasks();
+            this.render();
+        });
 
-                
 
-    hide(){
+        let listElement = document.createElement('ul');
+        listElement.className = 'todo__tasks tasks';
 
+        tasks.forEach(taskModel => {
+            let taskView = new TaskView(taskModel);
+            taskView.on('taskStatusChanged', () => this.render())
+            taskView.render(listElement);
+        })
+
+        appElement.appendChild(titleElement);
+        appElement.appendChild(inputElement);
+        appElement.appendChild(clearButton);
+        appElement.appendChild(listElement);
+
+        document.querySelector('body').replaceChild(appElement,document.querySelector('.todo'));
     }
 }
 
 class TaskView extends EventEmitter{
-    #model;
-    #template;
-    constructor(model){
+    #status = false;
+    #text = '';
+    #taskModel = {};
+    #id = 0;
+    constructor(taskModel){
         super();
 
-        this.#model = model;
-
-        this.#template = document.createElement('li');
-        this.#template.className = `tasks__task tasks__task_${model.isComplete()?'deactive':'active'}`;
-
-        let checkbox = document.createElement('input');
-        checkbox.setAttribute('type','checkbox');
-        checkbox.addEventListener('change', () => this.emit('flagChanged',this));
-        checkbox.checked = this.#model.isComplete();
-        this.#template.appendChild(checkbox);
-        
-        let text = document.createElement('p');
-        text.innerText = this.#model.getText();
-        this.#template.appendChild(text);
+        this.#status = taskModel.isComplete();
+        this.#text = taskModel.getText();
+        this.#id = taskModel.getId();
+        this.#taskModel = taskModel;
     }
 
-    render(){
+    render(parent){
+        let listItemElement = document.createElement('li');
+        listItemElement.id = `task_${this.#id}`;
+        listItemElement.className = `tasks__task tasks__task_${this.#status?'inactive':'active'}`;
 
-    }
+        let listItemCheckbox = document.createElement('input');
+        listItemCheckbox.type = 'checkbox';
+        listItemCheckbox.checked = this.#status;
+        listItemCheckbox.addEventListener('change', () => {
+            this.#taskModel.changeStatus();
+            this.emit('taskStatusChanged');
+            this.render(parent);
+        });
 
-    get(){
-        return this.#template;
-    }
-}
+        let listItemText = document.createElement('p');
+        listItemText.innerText = this.#text;
 
-class TaskEditorView extends EventEmitter{
-    #task
-    constructor(task){
-        super();
-        this.#task = task;
-    }
+        listItemElement.appendChild(listItemCheckbox);
+        listItemElement.appendChild(listItemText);
 
-    display(){
-        
-    }
-
-    hide(){
-        
+        parent.appendChild(listItemElement);
     }
 }
 
@@ -189,7 +195,6 @@ class TodoController extends EventEmitter{
         super();
         this.#model = model;
         view.on('inputChanged',(arg) => model.addTask(new TaskModel({text:arg, date:Date.now()})));
-
     }
 
 
@@ -199,7 +204,7 @@ class TaskController extends EventEmitter{
     constructor(model,view){
         super();
 
-        view.on('flagChanged',() => model.changeStatus());
+        view.on('flagChanged',() => model.changeStatus()); 
     }
 }
 
@@ -208,4 +213,4 @@ let todoModel = new TodoModel([]);
 
 let todoView = new TodoView(todoModel);
 let todoController = new TodoController(todoModel, todoView);
-todoView.display();
+todoView.render();
