@@ -5,6 +5,8 @@
 
 body{
     padding: 40px;
+
+    background-color: #DBFEB8;
 }
 
 .contacts{
@@ -12,14 +14,63 @@ body{
     flex-direction: column;
 }
 
+.btn{
+    cursor: pointer;
+
+    background-color: #DA2C38;
+}
+
 .form{
     display: flex;
     flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 0 5px #7A918D;
 
-    outline: 1px solid red;
+    background-color: #93B1A7;
 }
 
 .form__item{
     padding: 10px;
     margin: 10px;
+    background-color: #7A918D;
+    border: 0;
+    border-radius: 5px;
+    color: #fff;
+}
+
+.form__item::placeholder{
+    color: #fff;
+}
+
+.users{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+
+    list-style: none;
+    align-items: center;
+    gap: 20px;
+}
+
+.users__item{
+    background-color: #ccc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 5px  #333;
+    min-width: 200px;
+}
+
+.error{
+    position: fixed;
+    top: 0;
+    left:0;
+     
+    width: 100%;
+    background-color: red;
+    padding: 15px;
+
+    cursor: pointer;
 }

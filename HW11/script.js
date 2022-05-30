@@ -3,13 +3,6 @@ class Contacts {
     #lastId = 0;
 
     add(userData){
-     /*    const userData = {
-            id:this.#lastId,
-            name:"vasya",
-            email:"vasya@example.com",
-            address:"New-Vasyuki",
-            phone:"88002553535",
-        } */
         userData = {...userData, ...{id: this.#lastId}};
         const user = new User(userData);
         this.#data.push(user);
@@ -92,39 +85,53 @@ class ContactsApp extends Contacts{
 
         const inputNameElement = document.createElement('input');
         inputNameElement.classList.add('form__item');
+        inputNameElement.type = 'text';
         inputNameElement.name = 'name';
         inputNameElement.placeholder = 'Name';
 
 
         const inputEmailElement = document.createElement('input');
         inputEmailElement.classList.add('form__item');
+        inputEmailElement.type = 'email';
         inputEmailElement.name = 'email';
         inputEmailElement.placeholder = 'Email';
 
         const inputAddressElement = document.createElement('input');
         inputAddressElement.classList.add('form__item');
+        inputAddressElement.type = 'text';
         inputAddressElement.name = 'address';
         inputAddressElement.placeholder = 'Address';
 
         const inputPhoneElement = document.createElement('input');
         inputPhoneElement.classList.add('form__item');
+        inputPhoneElement.type = 'tel';
         inputPhoneElement.name = 'phone';
         inputPhoneElement.placeholder = 'Phone';
 
         const addButton = document.createElement('button');
-        addButton.classList.add('form__item');
+        addButton.classList.add('form__item','btn');
         addButton.innerText = 'Add';
 
         const contacts = this.get();
 
         const usersList = document.createElement('ul');
+        usersList.classList.add('form__users', 'users');
 
         contacts.forEach((contact) => {
             const contactData = contact.get();
             const userElement = document.createElement('li');
-            userElement.innerText = `name: ${contactData.name}, address: ${contactData.address}, email: ${contactData.email}, phone: ${contactData.phone}`;
+                Object.keys(contactData).forEach((key) => {
+                    if (key != 'id' && contactData[key]){
+                        const text = document.createElement('p');
+                        text.innerText = `${key}: ${contactData[key]}`;
+                        userElement.append(text);
+                    };
+                })
+            //userElement.innerText = `name: ${contactData.name}, address: ${contactData.address}, email: ${contactData.email}, phone: ${contactData.phone}`;
+            userElement.classList.add('users__item');
 
             const removeButton = document.createElement('button');
+            removeButton.classList.add('btn');
             removeButton.addEventListener('click', (e) => {
                 e.preventDefault();
 
@@ -135,6 +142,7 @@ class ContactsApp extends Contacts{
             removeButton.innerText = 'Remove';
     
             const editButton = document.createElement('button');
+            editButton.classList.add('btn');
             editButton.addEventListener('click', (e) => {
                 e.preventDefault();
 
@@ -147,12 +155,29 @@ class ContactsApp extends Contacts{
         })
 
 
-        formElement.append(inputNameElement,inputEmailElement,inputAddressElement,inputPhoneElement,addButton, usersList);
-        this.#app.append(formElement);
+        formElement.append(inputNameElement,inputEmailElement,inputAddressElement,inputPhoneElement,addButton);
+        this.#app.append(formElement,usersList);
         document.body.append(this.#app);
+    }
+    showError(error){
+        const errorElement = document.createElement('div');
+        errorElement.classList.add('error');
+        errorElement.innerText = error;
+        errorElement.addEventListener('click', () => this.closeError(errorElement));
+        this.#app.append(errorElement);
+    }
+
+    closeError(element){
+        element.remove();
     }
 
     onAdd(userData){
+        if (!userData.name || (!userData.phone && !userData.email && !userData.address)){
+            this.showError('All fields is required');
+
+            return;
+        }
+        
         this.add(userData);
 
         this.update();
