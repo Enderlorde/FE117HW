@@ -29,10 +29,10 @@ const Lightbulb = function(){
     }
 }
 
-let lightbulb = new Lightbulb();
-lightbulb.create(20,10);
-lightbulb.on();
-setTimeout(() => {
-    lightbulb.off(); 
-    console.log(`duration: ${lightbulb.getDurationOfWork()} cost: ${lightbulb.getTotalEnergyCost()}`)
-},10000);
+const SmartLightbulb = function(){
+    Lightbulb.apply(this);
+
+    
+}
+
+let bb = new SmartLightbulb();
