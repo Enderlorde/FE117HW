@@ -1,4 +1,9 @@
 const Lightbulb = function(){
+    this.power = 0;
+    this.energyCost = 0;
+    this.isToggled = false;
+    this.durationOfWork = 0;
+
     this.create = function (power, energyCost){
         this.power = power;
         this.energyCost = energyCost;
@@ -16,7 +21,7 @@ const Lightbulb = function(){
     this.off = function(){
         if (this.isToggled){
             this.isToggled = false;
-            clearInterval(this.isToggled);
+            clearInterval(this.timer);
         }
     }
 
@@ -32,7 +37,19 @@ const Lightbulb = function(){
 const SmartLightbulb = function(){
     Lightbulb.apply(this);
 
-    
+    this.on = function(){
+        if (!this.isToggled){
+            this.isToggled = true;
+            this.timer = setInterval(() => {
+                this.durationOfWork++;
+                console.log(this.durationOfWork);
+                if (this.durationOfWork > 10) {
+                    this.off();
+                    console.log('that was very smart');
+                };
+            }, 1000);
+        }
+    }
 }
 
 let bb = new SmartLightbulb();
