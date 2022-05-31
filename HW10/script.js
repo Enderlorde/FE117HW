@@ -53,3 +53,64 @@ const SmartLightbulb = function(){
 }
 
 let bb = new SmartLightbulb();
+
+
+const LazyUI = function(){
+    this.create = function(tagName){
+        return document.createElement(tagName);
+    }
+
+    this.attr = function(element, name, value){
+        element.setAttribute(name, value);
+    }
+
+    this.html = function(element, value=''){
+        if(value.length > 0){
+            element.innerHTML = value;
+        }else{
+            return element.innerHTML;
+        };
+    }
+
+    this.search = function(element, selector){
+        return element.querySelector(selector);
+    }
+
+    this.addClass = function(element, className){
+        element.classList.add(className);
+    }
+
+    this.removeClass = function(element, className){
+        element.classList.remove(className);
+    }
+
+    this.toggleClass = function(element, className){
+        //Хто я?
+    }
+
+    this.hasClass = function(element,  className){
+        return element.classList.contain(className);
+    }
+
+    this.append = function(element, newElement, beforeElement = null){
+        if (beforeElement){
+            element.before(newElement);
+        }else{
+            element.after(newElement);
+        }
+    }
+
+    this.on = function(element, eventName, funcName){
+        element.addEventListener(eventName, (e) => funcName());
+    }
+}
+
+window.onload = () => { 
+    let lz = new LazyUI();
+    let prop = lz.create('div');
+    lz.addClass(prop,'testClass');
+    lz.html(prop, 'Come get some');
+    console.log('HTML: ' + lz.html(prop));
+    lz.on(prop, 'click', () => {console.log(this, event.target);});
+    lz.append(document.body, prop);
+};
