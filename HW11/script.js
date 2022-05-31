@@ -10,8 +10,9 @@ class Contacts {
     }
 
     edit(id, obj){
-        const contact = this.#data.forEach((user) => {
-            if (user.id === id) return user;
+        let contact;
+        this.#data.forEach((user) => {
+            if (user.get().id === id) contact = user;
         });
 
         contact.edit(obj);
@@ -25,8 +26,9 @@ class Contacts {
         console.log(this.#data);
     }
 
-    get(){
-        return this.#data;
+    get(id = -1){
+        if (id < 0) return this.#data;
+        return this.#data.filter((user) => user.get().id == id);
     }
 }
 
@@ -89,7 +91,6 @@ class ContactsApp extends Contacts{
         inputNameElement.name = 'name';
         inputNameElement.placeholder = 'Name';
 
-
         const inputEmailElement = document.createElement('input');
         inputEmailElement.classList.add('form__item');
         inputEmailElement.type = 'email';
@@ -146,7 +147,9 @@ class ContactsApp extends Contacts{
             editButton.addEventListener('click', (e) => {
                 e.preventDefault();
 
-                this.onEdit();
+
+                
+                this.onEdit(contactData.id);
             });
             editButton.innerText = 'Edit';
 
@@ -183,8 +186,61 @@ class ContactsApp extends Contacts{
         this.update();
     }
 
-    onEdit(){
-        this.edit();
+    onEdit(id){
+
+        if (!this.get(id).length > 0) return;
+        const user = this.get(id)[0];
+        const userData = user.get();
+
+        const editForm = document.createElement('form');
+        editForm.classList.add('popup');
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.name = 'name';
+        nameInput.placeholder = 'Name';
+        nameInput.value = userData.name;
+
+        const emailInput = document.createElement('input');
+        emailInput.type = 'email';
+        emailInput.name = 'email';
+        emailInput.placeholder = 'Email';
+        emailInput.value = userData.email;
+
+        const addressInput = document.createElement('input');
+        addressInput.type = 'text';
+        addressInput.name = 'address';
+        addressInput.placeholder = 'Address';
+        addressInput.value = userData.address;
+
+        const phoneInput = document.createElement('input');
+        phoneInput.type = 'tel';
+        phoneInput.name = 'phone';
+        phoneInput.placeholder = 'Phone';
+        phoneInput.value = userData.phone;
+
+        const saveButton = document.createElement('button');
+        saveButton.classList.add('btn');
+        saveButton.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            const newUserData = {
+                name: nameInput.value,
+                email: emailInput.value,
+                phone: phoneInput.value,
+                address: addressInput.value,
+            };
+
+            this.edit(id, newUserData);
+
+            this.update();
+        });
+        saveButton.innerText = 'Save';
+
+        editForm.append(nameInput, emailInput, addressInput, phoneInput, saveButton);
+        this.#app.append(editForm);
+
+        //
     }
 
     onRemove(id){
