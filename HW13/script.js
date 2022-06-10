@@ -2,6 +2,34 @@ class Contacts {
     #data = [];
     #lastId = 0;
 
+    async getData(){
+        console.log('getting data');
+        let prom = await fetch('https://jsonplaceholder.typicode.com/users')
+        .then((response) => {
+            if (response.status == "200"){
+                return response.json();
+            }else{
+                return {};
+            }
+        })
+        .then((users) => {
+            if (users.length > 0){
+                users.forEach((user) => {
+                    const userData = {
+                            name: user.name,
+                            email: user.email,
+                            address: user.address.city,
+                            phone: user.phone,
+                    }
+                    this.add(userData);
+                });
+            }
+            console.log('data was getted');
+        });
+
+        return prom;
+    }
+
     add(userData){
         userData = {...userData, ...{id: this.#lastId}};
         const user = new User(userData);
@@ -67,9 +95,8 @@ class ContactsApp extends Contacts{
     constructor (){
         super();
         
-
-        this.getStorage();
-        this.update();
+        this.getStorage()
+        .then(() => {this.update(); console.log('updating');});
     }
 
     clearStorages(){
@@ -96,8 +123,12 @@ class ContactsApp extends Contacts{
         document.cookie = `storageExpiration=${new Date(Date.now()+864000000).toUTCString()}`;
     }
 
-    getStorage(){
-        if (!localStorage.getItem('contactsList')) return this.get();
+    async getStorage(){
+        console.log('getting data from localstorage');
+        if (!localStorage.getItem('contactsList') || localStorage.getItem('contactsList').length <= 2){
+            let data = await this.getData();
+            return data;
+        };
         let serializedContacts = JSON.parse(localStorage.getItem('contactsList'));
         let restoredContacts = serializedContacts.map((contactData) => {
             return this.add(contactData);
@@ -107,6 +138,7 @@ class ContactsApp extends Contacts{
     }
 
     update(){
+        
         this.clearStorages();
         if (document.querySelector('#contacts')) document.querySelector('#contacts').remove();
 
@@ -182,8 +214,6 @@ class ContactsApp extends Contacts{
                 e.preventDefault();
 
                 this.onRemove(contactData.id);
-
-                this.update();
             })
             removeButton.innerText = 'Remove';
     
@@ -204,8 +234,6 @@ class ContactsApp extends Contacts{
         formElement.append(inputNameElement,inputEmailElement,inputAddressElement,inputPhoneElement,addButton);
         this.#app.append(formElement,usersList);
         document.body.append(this.#app);
-
-        
     }
 
     showError(error){
