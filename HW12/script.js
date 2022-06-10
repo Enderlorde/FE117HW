@@ -18,12 +18,19 @@ class Contacts {
         contact.edit(obj);
     }
 
+    setData(data,lastId){
+        this.#data = data;
+        this.#lastId = lastId;
+    }
+
     remove(id){
         this.#data = this.#data.filter((user) => {
             return user.get().id != id;
         });
+    }
 
-        console.log(this.#data);
+    getLastId(){
+        return this.#lastId;
     }
 
     get(id = -1){
@@ -59,11 +66,48 @@ class ContactsApp extends Contacts{
     #app;
     constructor (){
         super();
+        
 
+        this.getStorage();
         this.update();
     }
 
+    clearStorages(){
+        if (document.cookie.length <= 0) return;
+        let cookies = document.cookie.split(';');
+        console.log(cookies);
+        const expiredRegExp = new RegExp('storageExpiration=(.*)');
+        const expiredDate = new Date (document.cookie.match(expiredRegExp)[1]);
+        if (expiredDate.getTime()<new Date().getTime()){
+            cookies.map((cookie) => {
+                const eq = new RegExp('^(.*)=');
+                const name = cookie.match(eq)[1];
+                document.cookie = `${name}=;expires=${new Date(0)}`
+            })
+            localStorage.clear();
+        }
+    }
+//
+    setStorage(){
+        let serializedContacts = this.get().map((contact => {
+            return contact.get();
+        }));
+        localStorage.setItem('contactsList', JSON.stringify(serializedContacts));
+        document.cookie = `storageExpiration=${new Date(Date.now()+864000000).toUTCString()}`;
+    }
+
+    getStorage(){
+        if (!localStorage.getItem('contactsList')) return this.get();
+        let serializedContacts = JSON.parse(localStorage.getItem('contactsList'));
+        let restoredContacts = serializedContacts.map((contactData) => {
+            return this.add(contactData);
+        })
+
+        return this.get();
+    }
+
     update(){
+        this.clearStorages();
         if (document.querySelector('#contacts')) document.querySelector('#contacts').remove();
 
         this.#app = document.createElement('div');
@@ -112,8 +156,9 @@ class ContactsApp extends Contacts{
         const addButton = document.createElement('button');
         addButton.classList.add('form__item','btn');
         addButton.innerText = 'Add';
-
+        
         const contacts = this.get();
+        console.log(contacts);
 
         const usersList = document.createElement('ul');
         usersList.classList.add('form__users', 'users');
@@ -146,8 +191,6 @@ class ContactsApp extends Contacts{
             editButton.classList.add('btn');
             editButton.addEventListener('click', (e) => {
                 e.preventDefault();
-
-
                 
                 this.onEdit(contactData.id);
             });
@@ -161,7 +204,10 @@ class ContactsApp extends Contacts{
         formElement.append(inputNameElement,inputEmailElement,inputAddressElement,inputPhoneElement,addButton);
         this.#app.append(formElement,usersList);
         document.body.append(this.#app);
+
+        
     }
+
     showError(error){
         const errorElement = document.createElement('div');
         errorElement.classList.add('error');
@@ -182,6 +228,7 @@ class ContactsApp extends Contacts{
         }
         
         this.add(userData);
+        this.setStorage();
 
         this.update();
     }
@@ -232,6 +279,7 @@ class ContactsApp extends Contacts{
             };
 
             this.edit(id, newUserData);
+            this.setStorage();
 
             this.update();
         });
@@ -245,6 +293,8 @@ class ContactsApp extends Contacts{
 
     onRemove(id){
         this.remove(id);
+        this.setStorage();
+        this.update();
     }
 }
 
